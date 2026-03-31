@@ -4,7 +4,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
@@ -75,6 +75,6 @@ def verify_token(token: str) -> UUID:
 security = HTTPBearer()
 
 
-async def get_current_user(credentials: HTTPAuthCredentials = Depends(security)) -> UUID:
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> UUID:
     """Extract and validate the current user from the authorization token."""
     return verify_token(credentials.credentials)
