@@ -1,0 +1,64 @@
+# render.yaml
+# Infrastructure-as-code for Render.com deployment.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy by connecting this repo in Render and selecting this file,
+# or by running: render blueprint launch
+
+services:
+  - type: web
+    name: facturas-api
+    env: python
+    plan: free
+    region: oregon
+
+    # Render detects Python automatically via requirements.txt.
+    # No Dockerfile needed.
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+
+    # start.sh runs alembic upgrade head then launches uvicorn.
+    startCommand: bash start.sh
+
+    # Render uses this path to decide if the service is healthy.
+    # Must return 2xx. If it returns non-2xx for 3 minutes, Render restarts.
+    healthCheckPath: /api/v1/health
+
+    # ---------------------------------------------------------------------------
+    # Environment variables
+    # sync: false  -> must be set manually in the Render dashboard (sensitive).
+    # value: "..." -> committed directly (non-sensitive defaults).
+    # ---------------------------------------------------------------------------
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+      - key: ENVIRONMENT
+        value: production
+
+      # Set in Render dashboard: postgresql+asyncpg://user:pass@host:5432/dbname
+      - key: DATABASE_URL
+        sync: false
+
+      # Set in Render dashboard: generate with `openssl rand -hex 32`
+      - key: SECRET_KEY
+        sync: false
+
+      # Set in Render dashboard: https://yourproject.supabase.co
+      - key: SUPABASE_URL
+        sync: false
+
+      # Set in Render dashboard: service_role key from Supabase > Settings > API
+      - key: SUPABASE_KEY
+        sync: false
+
+      - key: SUPABASE_BUCKET
+        value: facturas
+
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
+
+      # Comma-separated list of frontend origins allowed to call this API.
+      # Example: https://myapp.vercel.app,https://myapp.com
+      # Set in Render dashboard. Leave empty to block all cross-origin requests.
+      - key: CORS_ORIGINS
+        sync: false
