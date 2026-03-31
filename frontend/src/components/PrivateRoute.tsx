@@ -4,7 +4,7 @@
 
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { Spinner } from '@/components/Spinner'
+import Spinner from '@/components/Spinner'
 
 interface PrivateRouteProps {
   children: React.ReactNode
