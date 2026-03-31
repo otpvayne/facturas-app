@@ -12,7 +12,8 @@
 import axios from 'axios'
 import { getToken, clearToken } from '@/api/auth'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+// Use environment variable or fallback to Render backend URL
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://tesis-m0yw.onrender.com'
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

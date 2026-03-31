@@ -17,7 +17,7 @@ export async function register(
   passwordConfirm: string
 ): Promise<TokenResponse> {
   const payload: RegisterPayload = { email, password, password_confirm: passwordConfirm }
-  const response = await apiClient.post<TokenResponse>('/auth/register', payload)
+  const response = await apiClient.post<TokenResponse>('/api/v1/auth/register', payload)
 
   if (response.data) {
     setToken(response.data.access_token, response.data.expires_in)
@@ -31,7 +31,7 @@ export async function register(
  */
 export async function login(email: string, password: string): Promise<TokenResponse> {
   const payload: LoginPayload = { email, password }
-  const response = await apiClient.post<TokenResponse>('/auth/login', payload)
+  const response = await apiClient.post<TokenResponse>('/api/v1/auth/login', payload)
 
   if (response.data) {
     setToken(response.data.access_token, response.data.expires_in)
