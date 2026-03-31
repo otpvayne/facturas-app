@@ -13,6 +13,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.schemas.factura import FacturaDetail, FacturaSummary, PaginatedResponse
 from app.services import query_service
@@ -135,5 +136,6 @@ status_code_422 = status.HTTP_422_UNPROCESSABLE_ENTITY
 async def listar_facturas(
     params: Annotated[FacturaQueryParams, Depends()],
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> PaginatedResponse[FacturaSummary]:
-    return await query_service.list_facturas(db, params.filters)
+    return await query_service.list_facturas(db, params.filters, current_user)

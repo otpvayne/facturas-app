@@ -3,13 +3,12 @@ Pytest configuration and fixtures for the Facturas API tests.
 """
 
 import asyncio
-import os
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.core.config import settings
 from app.db.session import get_db
 from app.models.base import Base
 from main import app
@@ -26,7 +25,7 @@ def event_loop():
 @pytest.fixture
 async def test_db():
     """
-    Create an in-memory SQLite DB for testing (or use PostgreSQL if preferred).
+    Create an in-memory SQLite DB for testing.
 
     For now, we use SQLite in-memory for speed. In production we use PostgreSQL.
     """
@@ -63,20 +62,19 @@ async def test_db():
 
     yield AsyncSessionLocal
 
+    app.dependency_overrides.clear()
     await engine.dispose()
 
 
 @pytest.fixture
-async def client(test_db):
-    """Provide a test HTTP client for the FastAPI app."""
-    from fastapi.testclient import TestClient
-
-    return TestClient(app)
+async def db(test_db):
+    """Provide a database session for tests."""
+    async with test_db() as session:
+        yield session
 
 
 @pytest.fixture
-async def async_client(test_db):
-    """Provide an async HTTP client for testing async endpoints."""
-    from httpx import AsyncClient
-
-    return AsyncClient(app=app, base_url="http://test")
+async def client(test_db):
+    """Provide an async HTTP client for the FastAPI app."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac

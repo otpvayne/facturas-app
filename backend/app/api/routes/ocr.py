@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.factura import Factura
 from app.models.ocr_result import OcrResult
@@ -38,9 +39,15 @@ class OcrResponse(BaseModel):
 async def process_factura(
     factura_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> OcrResponse:
-    # 1. Fetch factura
-    result = await db.execute(select(Factura).where(Factura.id == factura_id))
+    # 1. Fetch factura and verify user ownership
+    result = await db.execute(
+        select(Factura).where(
+            Factura.id == factura_id,
+            Factura.user_id == current_user,
+        )
+    )
     factura: Factura | None = result.scalar_one_or_none()
     if not factura:
         raise HTTPException(

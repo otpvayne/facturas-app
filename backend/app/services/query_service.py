@@ -66,9 +66,9 @@ class FacturaFilters:
 
 
 async def list_facturas(
-    db: AsyncSession, filters: FacturaFilters
+    db: AsyncSession, filters: FacturaFilters, user_id: uuid.UUID
 ) -> PaginatedResponse[FacturaSummary]:
-    conditions = _build_conditions(filters)
+    conditions = _build_conditions(filters, user_id)
 
     # Total count (separate query to avoid loading rows)
     count_q = select(func.count()).select_from(Factura)
@@ -162,12 +162,15 @@ async def get_factura_detail(
 # ---------------------------------------------------------------------------
 
 
-def _build_conditions(filters: FacturaFilters) -> list:
+def _build_conditions(filters: FacturaFilters, user_id: uuid.UUID) -> list:
     """
     Accumulate SQLAlchemy WHERE conditions from filter values.
     Each active filter adds exactly one entry to the list.
     """
     conditions: list = []
+
+    # Always filter by user_id (multi-tenant requirement)
+    conditions.append(Factura.user_id == user_id)
 
     if filters.proveedor:
         conditions.append(Factura.proveedor.ilike(f"%{filters.proveedor}%"))

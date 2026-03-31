@@ -1,6 +1,14 @@
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Layout() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
       isActive
@@ -45,6 +53,12 @@ export default function Layout() {
               <NavLink to="/upload" className={navLinkClass}>
                 Subir Imagen
               </NavLink>
+              <button
+                onClick={handleLogout}
+                className={navLinkClass({ isActive: false })}
+              >
+                Logout
+              </button>
             </nav>
           </div>
         </div>

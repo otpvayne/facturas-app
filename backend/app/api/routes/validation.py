@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.factura import Factura
 from app.models.ocr_result import OcrResult
@@ -163,8 +164,9 @@ class FacturaDetailResponse(BaseModel):
 async def get_ocr_result(
     factura_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> OcrResultResponse:
-    factura = await _get_factura_or_404(db, factura_id)
+    factura = await _get_factura_or_404(db, factura_id, current_user)
     ocr = await validation_service.get_ocr_result_for_factura(db, factura.id)
 
     if ocr is None:
@@ -195,6 +197,7 @@ async def validate_factura(
     factura_id: uuid.UUID,
     payload: ValidatePayload,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> ValidationResponse:
     if not payload.has_any_field():
         raise HTTPException(
@@ -202,7 +205,7 @@ async def validate_factura(
             detail="Debes proporcionar al menos uno de: validated_provider, validated_date, validated_total.",
         )
 
-    factura = await _get_factura_or_404(db, factura_id)
+    factura = await _get_factura_or_404(db, factura_id, current_user)
 
     try:
         ocr = await validation_service.validate_factura(
@@ -242,8 +245,9 @@ async def validate_factura(
 async def get_factura_detail(
     factura_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> FacturaDetailResponse:
-    factura = await _get_factura_or_404(db, factura_id)
+    factura = await _get_factura_or_404(db, factura_id, current_user)
     ocr = await validation_service.get_ocr_result_for_factura(db, factura.id)
 
     ocr_summary: OcrSummary | None = None
@@ -283,8 +287,15 @@ async def get_factura_detail(
 # ---------------------------------------------------------------------------
 
 
-async def _get_factura_or_404(db: AsyncSession, factura_id: uuid.UUID) -> Factura:
-    result = await db.execute(select(Factura).where(Factura.id == factura_id))
+async def _get_factura_or_404(
+    db: AsyncSession, factura_id: uuid.UUID, user_id: uuid.UUID
+) -> Factura:
+    result = await db.execute(
+        select(Factura).where(
+            Factura.id == factura_id,
+            Factura.user_id == user_id,
+        )
+    )
     factura = result.scalar_one_or_none()
     if not factura:
         raise HTTPException(

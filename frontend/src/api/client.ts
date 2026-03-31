@@ -10,6 +10,7 @@
  *   const response = await apiClient.get('/facturas')
  */
 import axios from 'axios'
+import { getToken, clearToken } from '@/api/auth'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -21,10 +22,32 @@ const apiClient = axios.create({
   timeout: 60_000, // 60s — OCR can be slow on free tier
 })
 
+// Request interceptor: inject Authorization header with JWT token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 // Response interceptor: normalize errors to a simple string message
+// Also handle 401 by clearing token and redirecting to login
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 unauthorized — token expired or invalid
+    if (error?.response?.status === 401) {
+      clearToken()
+      // Redirect to login (will be handled by PrivateRoute component)
+      window.location.href = '/login'
+    }
+
     const detail = error?.response?.data?.detail
     if (typeof detail === 'string') {
       error.message = detail

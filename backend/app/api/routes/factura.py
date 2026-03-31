@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.factura import Factura
 from app.schemas.factura import FacturaDetail
@@ -40,9 +41,13 @@ class FacturaResponse(BaseModel):
 async def crear_factura(
     payload: FacturaCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> Factura:
     existing = await db.execute(
-        select(Factura).where(Factura.numero == payload.numero)
+        select(Factura).where(
+            Factura.numero == payload.numero,
+            Factura.user_id == current_user,
+        )
     )
     if existing.scalar_one_or_none():
         raise HTTPException(
@@ -50,7 +55,7 @@ async def crear_factura(
             detail=f"Ya existe una factura con el numero {payload.numero}",
         )
 
-    factura = Factura(**payload.model_dump())
+    factura = Factura(**payload.model_dump(), user_id=current_user)
     db.add(factura)
     await db.flush()
     await db.refresh(factura)
@@ -61,7 +66,21 @@ async def crear_factura(
 async def obtener_factura(
     factura_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> FacturaDetail:
+    # Verify factura belongs to current user
+    factura_result = await db.execute(
+        select(Factura).where(
+            Factura.id == factura_id,
+            Factura.user_id == current_user,
+        )
+    )
+    if not factura_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Factura no encontrada",
+        )
+
     detail = await query_service.get_factura_detail(db, factura_id)
     if detail is None:
         raise HTTPException(

@@ -2,6 +2,10 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -21,6 +25,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Rate Limiting
+# ---------------------------------------------------------------------------
+
+limiter = Limiter(key_func=get_remote_address)
+
+# ---------------------------------------------------------------------------
 # Application
 # ---------------------------------------------------------------------------
 
@@ -30,6 +40,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, lambda request, exc: JSONResponse(
+    status_code=429,
+    content={"detail": "Rate limit exceeded. Maximum 20 requests per minute."}
+))
 
 # ---------------------------------------------------------------------------
 # CORS

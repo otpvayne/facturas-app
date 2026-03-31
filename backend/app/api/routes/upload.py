@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.factura import Factura
 from app.services import storage_service
@@ -23,6 +24,7 @@ class UploadResponse(BaseModel):
 async def upload_factura_image(
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
+    current_user: uuid.UUID = Depends(get_current_user),
 ) -> UploadResponse:
     file_bytes = await file.read(MAX_READ_CHUNK)
 
@@ -50,7 +52,7 @@ async def upload_factura_image(
             detail=str(exc),
         ) from exc
 
-    factura = Factura(image_url=image_url, status="uploaded")
+    factura = Factura(image_url=image_url, status="uploaded", user_id=current_user)
     db.add(factura)
     await db.flush()
     await db.refresh(factura)
