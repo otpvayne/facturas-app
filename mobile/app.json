@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Facturas",
+    "slug": "facturas-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "https://cdn-icons-png.flaticon.com/512/3143/3143615.png",
+    "splash": {
+      "image": "https://cdn-icons-png.flaticon.com/512/3143/3143615.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTabletMode": true
+    },
+    "android": {
+      "minSdkVersion": 21,
+      "adaptiveIcon": {
+        "foregroundImage": "https://cdn-icons-png.flaticon.com/512/3143/3143615.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir acceso a fotos para subir facturas",
+          "cameraPermission": "Permitir acceso a cámara para capturar facturas"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
+  }
+}
